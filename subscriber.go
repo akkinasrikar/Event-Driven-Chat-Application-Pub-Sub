@@ -1,9 +1,14 @@
 package pubsub
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
-type Subscribers map[string][]*Subscriber
+// Subscribers is a map of subscriber name to subscriber
+type Subscribers map[string]*Subscriber
 
+// Subscriber is a struct that holds the subscriber name, message channel and topics 
 type Subscriber struct {
 	Name      string
 	Message   chan *Message
@@ -12,27 +17,31 @@ type Subscriber struct {
 	Destroyed bool
 }
 
+// NewSubscriber creates a new subscriber
 func NewSubscriber(name string) *Subscriber {
 	return &Subscriber{
 		Name:    name,
 		Message: make(chan *Message),
-		Topics:  make(map[string]bool),
+		Topics:  map[string]bool{},
 		Lock:    sync.RWMutex{},
 	}
 }
 
+// add topic to subscriber
 func (s *Subscriber) AddTopic(topic string) {
 	s.Lock.Lock()
 	defer s.Lock.Unlock()
 	s.Topics[topic] = true
 }
 
+// remove topic from subscriber
 func (s *Subscriber) RemoveTopic(topic string) {
 	s.Lock.Lock()
 	defer s.Lock.Unlock()
 	delete(s.Topics, topic)
 }
 
+// get topics from subscriber
 func (s *Subscriber) GetTopics() []string {
 	s.Lock.RLock()
 	defer s.Lock.RUnlock()
@@ -44,20 +53,23 @@ func (s *Subscriber) GetTopics() []string {
 }
 
 // get message from subscriber
-func (s *Subscriber) GetMessage() *Message {
-	return <-s.Message
+func (s *Subscriber) GetMessage() <-chan *Message {
+	fmt.Println("Received message from subscriber, ", s.Name, " message: ", s.Message)
+	return s.Message
 }
 
-// send message to subscriber
+// signal message to subscriber
 func (s *Subscriber) Signal(msg *Message) *Subscriber {
+	fmt.Println("sending message to subscriber, ", s.Name, " message: ", msg)
 	s.Lock.RLock()
-	defer s.Lock.RUnlock()
-	if _, ok := s.Topics[msg.Topic]; ok {
+	if !s.Destroyed {
 		s.Message <- msg
 	}
+	s.Lock.RUnlock()
 	return s
 }
 
+// destroy subscriber
 func (s *Subscriber) Destroy() {
 	s.Lock.Lock()
 	defer s.Lock.Unlock()
@@ -66,4 +78,3 @@ func (s *Subscriber) Destroy() {
 		s.Destroyed = true
 	}
 }
-
