@@ -8,7 +8,7 @@ import (
 // Subscribers is a map of subscriber name to subscriber
 type Subscribers map[string]*Subscriber
 
-// Subscriber is a struct that holds the subscriber name, message channel and topics 
+// Subscriber is a struct that holds the subscriber name, message channel and topics
 type Subscriber struct {
 	Name      string
 	Message   chan *Message
@@ -54,7 +54,6 @@ func (s *Subscriber) GetTopics() []string {
 
 // get message from subscriber
 func (s *Subscriber) GetMessage() <-chan *Message {
-	fmt.Println("Received message from subscriber, ", s.Name, " message: ", s.Message)
 	return s.Message
 }
 

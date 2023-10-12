@@ -2,53 +2,44 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"time"
 
 	pubsub "akkina.com/pub-sub/app"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	
-	// Create a new message broker 
+	// Create a new message broker
 	broker := pubsub.NewMessageBroker()
 
-	// Create a new subscriber and register it into our main broker
-	subscriber := broker.Attach("Srikar")
+	router := gin.Default()
+	router.POST("/subscribe/", func(c *gin.Context) {
+		var sub pubsub.Subscribe
+		c.BindJSON(&sub)
+		subscriber := broker.Attach(sub.Subscriber)
+		broker.Subscribe(subscriber, sub.Topic)
+		ch := subscriber.GetMessage()
+		go receive(subscriber.Name, ch)
+		c.JSON(200, gin.H{
+			"message": fmt.Sprintf("%v subscribed to %v", sub.Subscriber, sub.Topic),
+		})
+	})
+	router.POST("/publish/", func(c *gin.Context) {
+		var pub pubsub.Publish
+		c.BindJSON(&pub)
 
-	// Subscribe a subscriber to a topic
-	broker.Subscribe(subscriber, "DSA")
+		broker.Broadcast(pub.Message, pub.Sender)
+		c.JSON(200, gin.H{
+			"message": fmt.Sprintf("%v published to %v", pub.Sender, pub.Reciever),
+		})
+	})
 
-	// Get the message channel from the subscriber
-	ch := subscriber.GetMessage()
-
-
-	// Go routines to send and receive messages
-	go send(broker)
-	go receive(subscriber.Name, ch)
-
-	// Wait for user input to exit
-	fmt.Scanln()
-	fmt.Println("done")
+	router.Run(":8080")
 }
 
-func send(broker *pubsub.MessageBroker) {
-	fmt.Println("Producer, sending messages...")
+func receive(name string, ch <-chan *pubsub.Message) {
 	for {
-		msg := &pubsub.Message{
-			Topic:   "DSA",
-			Payload: fmt.Sprintf("%d", rand.Intn(100)),
-		}
-		broker.Broadcast(msg.Payload, msg.GetTopic())
-		fmt.Printf("Producer, sent %v\n", msg.GetPayload().(string))
-		time.Sleep(time.Second)
-	}
-}
-
-func receive(name string, ch1 <-chan *pubsub.Message) {
-	fmt.Printf("Subscriber %v, receiving...\n", name)
-	for {
-		msg, ok := <-ch1
+		msg, ok := <-ch
 		if !ok {
 			fmt.Println("channel closed")
 			continue
