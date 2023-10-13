@@ -1,4 +1,4 @@
-# Building an Event-Driven Chat Application with Go Channels, Mutex, and Goroutines
+# Building an Event-Driven Chat Application (Similar to Whatsapp) with Go Channels, Mutex, and Goroutines
 
 Description:
 
