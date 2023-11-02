@@ -5,6 +5,11 @@ type Subscribe struct {
 	SubscribedTo string `json:"subscribed_to"`
 }
 
+type Unsubscribe struct {
+	Subscriber  string `json:"subscriber"`
+	Unsubscribe string `json:"unsubscribe"`
+}
+
 type Publish struct {
 	Sender   string `json:"sender"`
 	Reciever string `json:"reciever"`

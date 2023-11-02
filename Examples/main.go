@@ -25,10 +25,27 @@ func main() {
 		})
 	})
 
+	// unsubscribe a subscriber from a topic
+	router.POST("/unsubscribe/", func(c *gin.Context) {
+		var sub pubsub.Unsubscribe
+		c.BindJSON(&sub)
+		subscriber := broker.Attach(sub.Subscriber)
+		broker.Unsubscribe(subscriber, sub.Unsubscribe)
+		c.JSON(200, gin.H{
+			"message": fmt.Sprintf("%v unsubscribed from %v", sub.Subscriber, sub.Unsubscribe),
+		})
+	})
+
 	router.POST("/send/", func(c *gin.Context) {
 		var pub pubsub.Publish
 		c.BindJSON(&pub)
-		broker.Send(pub.Message, pub.Sender, pub.Reciever)
+		err := broker.Send(pub.Message, pub.Sender, pub.Reciever)
+		if err != nil {
+			c.JSON(200, gin.H{
+				"message": fmt.Sprintf("%v", err),
+			})
+			return
+		}
 		c.JSON(200, gin.H{
 			"message": fmt.Sprintf("%v sent a message to %v", pub.Sender, pub.Reciever),
 		})
