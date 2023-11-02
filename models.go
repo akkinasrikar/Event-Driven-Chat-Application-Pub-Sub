@@ -6,7 +6,17 @@ type Publish struct {
 	Message  string `json:"message"`
 }
 
-type Subscribe struct {
-	Subscriber string `json:"subscriber"`
-	Topic      string `json:"topic"`
+type Join struct {
+	UserName  string `json:"username"`
+	GroupName string `json:"groupname"`
+}
+
+type Group struct {
+	Name string `json:"name"`
+}
+
+type Broadcast struct {
+	Sender  string `json:"sender"`
+	Topic   string `json:"topic"`
+	Message string `json:"message"`
 }

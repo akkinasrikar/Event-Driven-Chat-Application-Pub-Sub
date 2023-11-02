@@ -14,14 +14,14 @@ func main() {
 
 	router := gin.Default()
 	router.POST("/subscribe/", func(c *gin.Context) {
-		var sub pubsub.Subscribe
+		var sub pubsub.Subscriber
 		c.BindJSON(&sub)
-		subscriber := broker.Attach(sub.Subscriber)
-		broker.Subscribe(subscriber, sub.Topic)
+		subscriber := broker.Attach(sub.Name)
+		broker.Subscribe(subscriber, sub.Name)
 		ch := subscriber.GetMessage()
 		go receive(subscriber.Name, ch)
 		c.JSON(200, gin.H{
-			"message": fmt.Sprintf("%v subscribed to %v", sub.Subscriber, sub.Topic),
+			"message": fmt.Sprintf("%v subscribed to %v", sub.Name, sub.Name),
 		})
 	})
 	router.POST("/publish/", func(c *gin.Context) {
@@ -34,17 +34,50 @@ func main() {
 		})
 	})
 
+	// create a Group
+	router.POST("/group/", func(c *gin.Context) {
+		var group pubsub.Group
+		c.BindJSON(&group)
+		broker.CreateTopic(group.Name)
+		c.JSON(200, gin.H{
+			"message": fmt.Sprintf("Group %v created", group.Name),
+		})
+	})
+
+	// Join a group
+	router.POST("/join/", func(c *gin.Context) {
+		var sub pubsub.Join
+		c.BindJSON(&sub)
+		subscriber := broker.Attach(sub.UserName)
+		broker.Subscribe(subscriber, sub.GroupName)
+		ch := subscriber.GetMessage()
+		go receive(subscriber.Name, ch)
+		c.JSON(200, gin.H{
+			"message": fmt.Sprintf("%v joined %v", sub.UserName, sub.GroupName),
+		})
+	})
+
+	// publish to a group
+	router.POST("/publish/topic/", func(c *gin.Context) {
+		var pub pubsub.Broadcast
+		c.BindJSON(&pub)
+		fmt.Printf("%v sending message to %v", pub.Sender, pub.Topic)
+		broker.Broadcast(pub.Message, pub.Sender, pub.Topic)
+		c.JSON(200, gin.H{
+			"message": fmt.Sprintf("%v published to %v", pub.Sender, pub.Topic),
+		})
+	})
+
 	router.Run(":8080")
 }
 
 func receive(name string, ch <-chan *pubsub.Message) {
 	for {
-		msg, ok := <-ch
+		_, ok := <-ch
 		if !ok {
 			fmt.Println("channel closed")
 			continue
 		}
-		fmt.Printf("Subscriber %v, received %v\n", name, msg.GetPayload().(string))
 		time.Sleep(time.Second)
 	}
 }

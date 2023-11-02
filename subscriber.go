@@ -59,7 +59,7 @@ func (s *Subscriber) GetMessage() <-chan *Message {
 
 // signal message to subscriber
 func (s *Subscriber) Signal(msg *Message) *Subscriber {
-	fmt.Println("sending message to subscriber, ", s.Name, " message: ", msg)
+	fmt.Printf("Delivered message to %v : %v \n", s.Name, msg.Payload)
 	s.Lock.RLock()
 	if !s.Destroyed {
 		s.Message <- msg

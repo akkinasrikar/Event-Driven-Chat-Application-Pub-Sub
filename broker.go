@@ -88,3 +88,12 @@ func (b *MessageBroker) Broadcast(payload interface{}, topics ...string) {
 		b.lock.RUnlock()
 	}
 }
+
+
+func (b *MessageBroker) CreateTopic(name string) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if _, ok := b.topics[name]; !ok {
+		b.topics[name] = Subscribers{}
+	}
+}
