@@ -14,23 +14,23 @@ func main() {
 
 	router := gin.Default()
 	router.POST("/subscribe/", func(c *gin.Context) {
-		var sub pubsub.Subscriber
+		var sub pubsub.Subscribe
 		c.BindJSON(&sub)
-		subscriber := broker.Attach(sub.Name)
-		broker.Subscribe(subscriber, sub.Name)
+		subscriber := broker.Attach(sub.Subscriber)
+		broker.Subscribe(subscriber, sub.SubscribedTo)
 		ch := subscriber.GetMessage()
 		go receive(subscriber.Name, ch)
 		c.JSON(200, gin.H{
-			"message": fmt.Sprintf("%v subscribed to %v", sub.Name, sub.Name),
+			"message": fmt.Sprintf("%v subscribed to %v", sub.Subscriber, sub.SubscribedTo),
 		})
 	})
-	router.POST("/publish/", func(c *gin.Context) {
+
+	router.POST("/send/", func(c *gin.Context) {
 		var pub pubsub.Publish
 		c.BindJSON(&pub)
-
-		broker.Broadcast(pub.Message, pub.Sender)
+		broker.Send(pub.Message, pub.Sender, pub.Reciever)
 		c.JSON(200, gin.H{
-			"message": fmt.Sprintf("%v published to %v", pub.Sender, pub.Reciever),
+			"message": fmt.Sprintf("%v sent a message to %v", pub.Sender, pub.Reciever),
 		})
 	})
 

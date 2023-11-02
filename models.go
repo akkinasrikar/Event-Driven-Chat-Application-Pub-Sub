@@ -1,5 +1,10 @@
 package pubsub
 
+type Subscribe struct {
+	Subscriber   string `json:"subscriber"`
+	SubscribedTo string `json:"subscribed_to"`
+}
+
 type Publish struct {
 	Sender   string `json:"sender"`
 	Reciever string `json:"reciever"`
