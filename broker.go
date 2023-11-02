@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -89,6 +90,23 @@ func (b *MessageBroker) Broadcast(payload interface{}, topics ...string) {
 	}
 }
 
+// send a message to a specific subscriber
+func (b *MessageBroker) Send(payload string, sender string, reciever string) {
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+	m := &Message{
+		Topic:   reciever,
+		Payload: payload,
+	}
+	// check if the reciever is subscribed to the sender
+	if _, ok := b.topics[reciever][sender]; !ok {
+		fmt.Println("reciever is not subscribed to sender")
+		return
+	}
+	go (func(s *Subscriber) {
+		s.Signal(m)
+	})(b.subscribers[reciever])
+}
 
 func (b *MessageBroker) CreateTopic(name string) {
 	b.lock.Lock()
