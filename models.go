@@ -23,6 +23,7 @@ type Join struct {
 
 type Group struct {
 	Name string `json:"name"`
+	Limit int `json:"limit"`
 }
 
 type Broadcast struct {

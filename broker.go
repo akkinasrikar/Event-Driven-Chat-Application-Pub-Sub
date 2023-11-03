@@ -10,7 +10,9 @@ import (
 type MessageBroker struct {
 	subscribers Subscribers
 	lock        sync.RWMutex
-	topics      map[string]Subscribers
+	topics     map[string]Subscribers
+	topicLimit map[string]int
+
 }
 
 // NewMessageBroker creates a new message broker
@@ -19,6 +21,7 @@ func NewMessageBroker() *MessageBroker {
 		subscribers: Subscribers{},
 		lock:        sync.RWMutex{},
 		topics:      map[string]Subscribers{},
+		topicLimit:  map[string]int{},
 	}
 }
 
@@ -32,14 +35,19 @@ func (b *MessageBroker) Attach(name string) *Subscriber {
 }
 
 // subscribe a subscriber to a topic
-func (b *MessageBroker) Subscribe(subscriber *Subscriber, topic string) {
+func (b *MessageBroker) Subscribe(subscriber *Subscriber, topic string) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if _, ok := b.topics[topic]; !ok {
 		b.topics[topic] = Subscribers{}
 	}
+	if len(b.topics[topic]) >= b.topicLimit[topic] {
+		fmt.Printf("%v has reached the limit of %v subscribers", topic, b.topicLimit[topic])
+		return errors.New("topic has reached the limit of subscribers")
+	}
 	b.topics[topic][subscriber.Name] = subscriber
 	subscriber.AddTopic(topic)
+	return nil
 }
 
 // unsubscribe a subscriber from a topic
@@ -110,10 +118,11 @@ func (b *MessageBroker) Send(payload string, sender string, reciever string) err
 	return nil
 }
 
-func (b *MessageBroker) CreateTopic(name string) {
+func (b *MessageBroker) CreateTopic(name string, limit int) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if _, ok := b.topics[name]; !ok {
 		b.topics[name] = Subscribers{}
+		b.topicLimit[name] = limit
 	}
 }

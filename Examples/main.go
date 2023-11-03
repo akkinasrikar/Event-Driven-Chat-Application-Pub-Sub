@@ -55,7 +55,7 @@ func main() {
 	router.POST("/group/", func(c *gin.Context) {
 		var group pubsub.Group
 		c.BindJSON(&group)
-		broker.CreateTopic(group.Name)
+		broker.CreateTopic(group.Name, group.Limit)
 		c.JSON(200, gin.H{
 			"message": fmt.Sprintf("Group %v created", group.Name),
 		})
@@ -66,7 +66,13 @@ func main() {
 		var sub pubsub.Join
 		c.BindJSON(&sub)
 		subscriber := broker.Attach(sub.UserName)
-		broker.Subscribe(subscriber, sub.GroupName)
+		err := broker.Subscribe(subscriber, sub.GroupName)
+		if err != nil {
+			c.JSON(200, gin.H{
+				"message": fmt.Sprintf("%v", err),
+			})
+			return
+		}
 		ch := subscriber.GetMessage()
 		go receive(subscriber.Name, ch)
 		c.JSON(200, gin.H{
@@ -78,7 +84,7 @@ func main() {
 	router.POST("/publish/topic/", func(c *gin.Context) {
 		var pub pubsub.Broadcast
 		c.BindJSON(&pub)
-		fmt.Printf("%v sending message to %v", pub.Sender, pub.Topic)
+		fmt.Printf("%v sending message to %v\n", pub.Sender, pub.Topic)
 		broker.Broadcast(pub.Message, pub.Sender, pub.Topic)
 		c.JSON(200, gin.H{
 			"message": fmt.Sprintf("%v published to %v", pub.Sender, pub.Topic),
