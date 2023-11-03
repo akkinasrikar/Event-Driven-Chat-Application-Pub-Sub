@@ -4,16 +4,23 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 )
 
-// MessageBroker is the main broker that will handle the subscribers and topics
+// MessageBroker is the main broker that will handle the subscribers and topic
 type MessageBroker struct {
 	subscribers Subscribers
 	lock        sync.RWMutex
-	topics     map[string]Subscribers
-	topicLimit map[string]int
-	GroupAdmin map[string][]string
+	topics      map[string]Subscribers
+	topicLimit  map[string]int
+	GroupAdmin  map[string][]string
+	History     map[string][]MessagesHistory
+}
 
+type MessagesHistory struct {
+	timeStamp string
+	message   string
+	sender    string
 }
 
 // NewMessageBroker creates a new message broker
@@ -24,6 +31,7 @@ func NewMessageBroker() *MessageBroker {
 		topics:      map[string]Subscribers{},
 		topicLimit:  map[string]int{},
 		GroupAdmin:  map[string][]string{},
+		History:     map[string][]MessagesHistory{},
 	}
 }
 
@@ -89,7 +97,6 @@ func (b *MessageBroker) LeaveGroup(subscriber *Subscriber, topic string, admin s
 	return errors.New("admin is not owner of the group")
 }
 
-
 // unsubscribe a subscriber from a topic
 func (b *MessageBroker) Unsubscribe(subscriber *Subscriber, topic string) {
 	b.lock.Lock()
@@ -120,23 +127,29 @@ func (b *MessageBroker) Subscribers(topic string) int {
 }
 
 // broadcast a message to all subscribers of a topic
-func (b *MessageBroker) Broadcast(payload interface{}, topics ...string) {
-	for _, topic := range topics {
-		if b.Subscribers(topic) == 0 {
-			continue
-		}
-		b.lock.RLock()
-		for _, s := range b.topics[topic] {
-			m := &Message{
-				Topic:   topic,
-				Payload: payload,
-			}
-			go (func(s *Subscriber) {
-				s.Signal(m)
-			})(s)
-		}
-		b.lock.RUnlock()
+func (b *MessageBroker) Broadcast(payload string, sender string, topic string) error {
+	messageObj := MessagesHistory{
+		timeStamp: time.Now().Format("2006-01-02 15:04:05"),
+		message:   payload,
+		sender:    sender,
 	}
+	b.lock.RLock()
+	if _, ok := b.topics[topic][sender]; !ok {
+		fmt.Println("sender is not subscribed to the topic")
+		return errors.New("sender is not subscribed to the topic")
+	}
+	b.History[topic] = append(b.History[topic], messageObj)
+	for _, s := range b.topics[topic] {
+		m := &Message{
+			Topic:   topic,
+			Payload: payload,
+		}
+		go (func(s *Subscriber) {
+			s.Signal(m)
+		})(s)
+	}
+	b.lock.RUnlock()
+	return nil
 }
 
 // send a message to a specific subscriber
@@ -160,11 +173,17 @@ func (b *MessageBroker) Send(payload string, sender string, reciever string) err
 
 func (b *MessageBroker) CreateTopic(GroupName string, Limit int, Admin string) {
 	b.lock.Lock()
-	defer b.lock.Unlock()
 	if _, ok := b.topics[GroupName]; !ok {
 		b.topics[GroupName] = Subscribers{}
 		b.topicLimit[GroupName] = Limit
 		b.GroupAdmin[GroupName] = []string{Admin}
-
 	}
+	b.lock.Unlock()
+	subscriber := b.Attach(Admin)
+	b.SubscribeToGroup(subscriber, GroupName, Admin)
+}
+
+
+func (b *MessageBroker) GetHistory(topic string) []MessagesHistory {
+	return b.History[topic]
 }
