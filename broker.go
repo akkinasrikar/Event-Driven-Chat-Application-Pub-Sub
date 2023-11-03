@@ -12,6 +12,7 @@ type MessageBroker struct {
 	lock        sync.RWMutex
 	topics     map[string]Subscribers
 	topicLimit map[string]int
+	GroupAdmin map[string][]string
 
 }
 
@@ -22,6 +23,7 @@ func NewMessageBroker() *MessageBroker {
 		lock:        sync.RWMutex{},
 		topics:      map[string]Subscribers{},
 		topicLimit:  map[string]int{},
+		GroupAdmin:  map[string][]string{},
 	}
 }
 
@@ -35,7 +37,15 @@ func (b *MessageBroker) Attach(name string) *Subscriber {
 }
 
 // subscribe a subscriber to a topic
-func (b *MessageBroker) Subscribe(subscriber *Subscriber, topic string) error {
+func (b *MessageBroker) Subscribe(subscriber *Subscriber, topic string) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if _, ok := b.topics[topic]; !ok {
+		b.topics[topic] = Subscribers{}
+	}
+}
+
+func (b *MessageBroker) SubscribeToGroup(subscriber *Subscriber, topic string, admin string) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if _, ok := b.topics[topic]; !ok {
@@ -45,10 +55,40 @@ func (b *MessageBroker) Subscribe(subscriber *Subscriber, topic string) error {
 		fmt.Printf("%v has reached the limit of %v subscribers", topic, b.topicLimit[topic])
 		return errors.New("topic has reached the limit of subscribers")
 	}
-	b.topics[topic][subscriber.Name] = subscriber
-	subscriber.AddTopic(topic)
-	return nil
+	if admin != "" {
+		for _, adminUser := range b.GroupAdmin[topic] {
+			if admin == adminUser {
+				b.topics[topic][subscriber.Name] = subscriber
+				subscriber.AddTopic(topic)
+				return nil
+			}
+		}
+	}
+	fmt.Println("admin is not owner of the group")
+	return errors.New("admin is not owner of the group")
 }
+
+// leave a group
+func (b *MessageBroker) LeaveGroup(subscriber *Subscriber, topic string, admin string) error {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	if admin != "" {
+		for _, adminUser := range b.GroupAdmin[topic] {
+			if admin == adminUser {
+				if _, ok := b.topics[topic][subscriber.Name]; !ok {
+					fmt.Println("subscriber is not subscribed to the topic")
+					return errors.New("subscriber is not subscribed to the topic")
+				}
+				delete(b.topics[topic], subscriber.Name)
+				return nil
+			}
+		}
+	}
+	fmt.Println("admin is not owner of the group")
+	return errors.New("admin is not owner of the group")
+}
+
 
 // unsubscribe a subscriber from a topic
 func (b *MessageBroker) Unsubscribe(subscriber *Subscriber, topic string) {
@@ -118,11 +158,13 @@ func (b *MessageBroker) Send(payload string, sender string, reciever string) err
 	return nil
 }
 
-func (b *MessageBroker) CreateTopic(name string, limit int) {
+func (b *MessageBroker) CreateTopic(GroupName string, Limit int, Admin string) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	if _, ok := b.topics[name]; !ok {
-		b.topics[name] = Subscribers{}
-		b.topicLimit[name] = limit
+	if _, ok := b.topics[GroupName]; !ok {
+		b.topics[GroupName] = Subscribers{}
+		b.topicLimit[GroupName] = Limit
+		b.GroupAdmin[GroupName] = []string{Admin}
+
 	}
 }
