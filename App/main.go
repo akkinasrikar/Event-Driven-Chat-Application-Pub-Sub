@@ -55,9 +55,9 @@ func main() {
 	router.POST("/group/", func(c *gin.Context) {
 		var group pubsub.Group
 		c.BindJSON(&group)
-		broker.CreateTopic(group.Name, group.Limit)
+		broker.CreateTopic(group.GroupName, group.Limit, group.Admin)
 		c.JSON(200, gin.H{
-			"message": fmt.Sprintf("Group %v created", group.Name),
+			"message": fmt.Sprintf("%v created a group %v", group.Admin, group.GroupName),
 		})
 	})
 
@@ -66,7 +66,7 @@ func main() {
 		var sub pubsub.Join
 		c.BindJSON(&sub)
 		subscriber := broker.Attach(sub.UserName)
-		err := broker.Subscribe(subscriber, sub.GroupName)
+		err := broker.SubscribeToGroup(subscriber, sub.GroupName, sub.Admin)
 		if err != nil {
 			c.JSON(200, gin.H{
 				"message": fmt.Sprintf("%v", err),
@@ -77,6 +77,23 @@ func main() {
 		go receive(subscriber.Name, ch)
 		c.JSON(200, gin.H{
 			"message": fmt.Sprintf("%v joined %v", sub.UserName, sub.GroupName),
+		})
+	})
+
+	// Leave a group
+	router.POST("/leave/", func(c *gin.Context) {
+		var sub pubsub.Leave
+		c.BindJSON(&sub)
+		subscriber := broker.Attach(sub.UserName)
+		err := broker.LeaveGroup(subscriber, sub.GroupName, sub.Admin)
+		if err != nil {
+			c.JSON(200, gin.H{
+				"message": fmt.Sprintf("%v", err),
+			})
+			return
+		}
+		c.JSON(200, gin.H{
+			"message": fmt.Sprintf("%v left %v", sub.UserName, sub.GroupName),
 		})
 	})
 

@@ -17,13 +17,21 @@ type Publish struct {
 }
 
 type Join struct {
+	Admin     string `json:"admin"`
+	UserName  string `json:"username"`
+	GroupName string `json:"groupname"`
+}
+
+type Leave struct {
+	Admin     string `json:"admin"`
 	UserName  string `json:"username"`
 	GroupName string `json:"groupname"`
 }
 
 type Group struct {
-	Name string `json:"name"`
-	Limit int `json:"limit"`
+	Admin     string `json:"admin"`
+	GroupName string `json:"groupname"`
+	Limit     int    `json:"limit"`
 }
 
 type Broadcast struct {
