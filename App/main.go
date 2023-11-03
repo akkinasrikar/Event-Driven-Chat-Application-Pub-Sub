@@ -102,9 +102,24 @@ func main() {
 		var pub pubsub.Broadcast
 		c.BindJSON(&pub)
 		fmt.Printf("%v sending message to %v\n", pub.Sender, pub.Topic)
-		broker.Broadcast(pub.Message, pub.Sender, pub.Topic)
+		err := broker.Broadcast(pub.Message, pub.Sender, pub.Topic)
+		if err != nil {
+			c.JSON(200, gin.H{
+				"message": fmt.Sprintf("%v", err),
+			})
+			return
+		}
 		c.JSON(200, gin.H{
 			"message": fmt.Sprintf("%v published to %v", pub.Sender, pub.Topic),
+		})
+	})
+
+	// History of a Specific Group
+	router.GET("/history/:group", func(c *gin.Context) {
+		group := c.Param("group")
+		history := broker.History[group]
+		c.JSON(200, gin.H{
+			"history": fmt.Sprintf("%v", history),
 		})
 	})
 
