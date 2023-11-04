@@ -53,21 +53,24 @@ func (b *MessageBroker) Subscribe(subscriber *Subscriber, topic string) {
 	}
 }
 
-func (b *MessageBroker) SubscribeToGroup(subscriber *Subscriber, topic string, admin string) error {
+func (b *MessageBroker) SubscribeToGroup(subscriber *Subscriber, sub Join) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	if _, ok := b.topics[topic]; !ok {
-		b.topics[topic] = Subscribers{}
+	if _, ok := b.topics[sub.GroupName]; !ok {
+		b.topics[sub.GroupName] = Subscribers{}
 	}
-	if len(b.topics[topic]) >= b.topicLimit[topic] {
-		fmt.Printf("%v has reached the limit of %v subscribers", topic, b.topicLimit[topic])
+	if len(b.topics[sub.GroupName]) >= b.topicLimit[sub.GroupName] {
+		fmt.Printf("%v has reached the limit of %v subscribers", sub.GroupName, b.topicLimit[sub.GroupName])
 		return errors.New("topic has reached the limit of subscribers")
 	}
-	if admin != "" {
-		for _, adminUser := range b.GroupAdmin[topic] {
-			if admin == adminUser {
-				b.topics[topic][subscriber.Name] = subscriber
-				subscriber.AddTopic(topic)
+	if sub.Admin != "" {
+		for _, adminUser := range b.GroupAdmin[sub.GroupName] {
+			if sub.Admin == adminUser {
+				b.topics[sub.GroupName][subscriber.Name] = subscriber
+				subscriber.AddTopic(sub.GroupName)
+				if sub.MakeAdmin {
+					b.GroupAdmin[sub.GroupName] = append(b.GroupAdmin[sub.GroupName], subscriber.Name)
+				}
 				return nil
 			}
 		}

@@ -20,6 +20,7 @@ type Join struct {
 	Admin     string `json:"admin"`
 	UserName  string `json:"username"`
 	GroupName string `json:"groupname"`
+	MakeAdmin bool   `json:"makeadmin"`
 }
 
 type Leave struct {
