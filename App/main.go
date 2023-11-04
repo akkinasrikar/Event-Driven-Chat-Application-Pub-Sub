@@ -66,7 +66,7 @@ func main() {
 		var sub pubsub.Join
 		c.BindJSON(&sub)
 		subscriber := broker.Attach(sub.UserName)
-		err := broker.SubscribeToGroup(subscriber, sub.GroupName, sub.Admin)
+		err := broker.SubscribeToGroup(subscriber, sub)
 		if err != nil {
 			c.JSON(200, gin.H{
 				"message": fmt.Sprintf("%v", err),
