@@ -14,24 +14,28 @@ In the world of real-time communication, designing a robust chat application tha
 
 4. **Goroutines:** Goroutines are lightweight threads in Go that enable concurrent execution. We use goroutines to manage user connections, handle incoming messages, and broadcast messages to all connected users. This concurrent processing ensures optimal performance even with a large number of users.
 
-**Features:**
+The "Event Driven Messenger" project is a real-time communication application designed with a focus on leveraging Go routines and channels, following event-driven pub-sub system design principles. Unlike traditional messenger applications, this project is volatile in nature, meaning it does not rely on a persistent database, enhancing its performance and speed.
 
-- **Real-Time Messaging:** Users can send and receive messages in real-time, providing a seamless chat experience.
+**Key Features:**
 
-- **User Management:** The application handles user registration, login, and disconnection, ensuring a secure and reliable user experience.
+1. **Multiple Admins:** The system allows for multiple administrators to manage and moderate conversations and groups.
 
-- **Chat History:** The system stores and retrieves chat history, allowing users to view previous messages when they join a chat room.
+2. **Leave Group:** Users can leave a group at any time, providing flexibility in managing their participation.
 
-- **Scalability:** Thanks to the EDA approach and Go's concurrency capabilities, the application can easily scale to accommodate a growing user base.
+3. **Unsubscribe User:** The ability to unsubscribe a user from specific channels or groups, ensuring user preferences are respected.
 
-**Benefits:**
+4. **Group Limit:** Admins can set limits on the number of participants in a group, maintaining the group's intended size.
 
-- **Responsive:** With EDA, Go channels, and goroutines, the chat application is highly responsive, delivering messages instantly.
+5. **Group Admin:** Assigning group administrators with specific privileges for managing group activities.
 
-- **Efficient:** By efficiently managing resources with mutexes, the application minimizes resource contention and avoids bottlenecks.
+6. **History of the Conversation:** The application stores and provides access to the history of conversations for users to refer back to previous discussions.
 
-- **Secure:** Properly implemented mutexes ensure data consistency and prevent data corruption or unauthorized access.
+7. **One-to-One Messaging:** Users can have private conversations with individuals, ensuring secure and direct communication.
 
-- **Scalable:** The application is designed to handle a large number of users and messages without sacrificing performance.
+8. **One-to-Many Broadcasting:** Broadcasting messages to multiple users or groups with a single action, facilitating mass communication.
 
-Building an EDA chat application with Go channels, mutexes, and goroutines showcases the power of Go in creating scalable, real-time communication systems.
+9. **Message Broker:** The system includes a message broker that manages message distribution and ensures efficient communication between users and groups.
+
+10. **Publisher-Subscriber Model:** Utilizes a publisher-subscriber model for event-driven communication, allowing users to subscribe to specific topics or channels and receive real-time updates.
+
+This project represents a dynamic and efficient event-driven messenger application, eliminating the need for a database while focusing on Go routines and channels to deliver fast and responsive communication. It caters to the needs of various users and administrators, offering a wide range of features for effective communication and collaboration.
