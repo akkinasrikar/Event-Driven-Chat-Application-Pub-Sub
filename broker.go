@@ -49,7 +49,7 @@ func (b *MessageBroker) Subscribe(subscriber *Subscriber, topic string) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if _, ok := b.topics[topic]; !ok {
-		b.topics[topic] = Subscribers{}
+		b.topics[topic] = Subscribers{subscriber.Name: subscriber}
 	}
 }
 
@@ -183,9 +183,12 @@ func (b *MessageBroker) CreateTopic(GroupName string, Limit int, Admin string) {
 	}
 	b.lock.Unlock()
 	subscriber := b.Attach(Admin)
-	b.SubscribeToGroup(subscriber, GroupName, Admin)
+	b.SubscribeToGroup(subscriber, Join{
+		GroupName: GroupName,
+		Admin:     Admin,
+		MakeAdmin: true,
+	})
 }
-
 
 func (b *MessageBroker) GetHistory(topic string) []MessagesHistory {
 	return b.History[topic]
